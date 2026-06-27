@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- 
+    =========================================
+    PROJECT:  Interactive Web Calculator
+    AUTHOR:   Amara Kallon
+    ACADEMIC: Sky Vision College of Digital Technology and Management
+              (Affiliated with Ernest Bai Koroma University of Science and Technology)
+    DATE:     June 2026
+    
+    All UI design, custom ripple effects, and 
+    JavaScript state logic fully engineered by the author.
+    =========================================
+  -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Amara Kallon - Modern Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --card: #22222f;
+      --border: #2e2e42;
+      --accent: #7c6aff;
+      --accent2: #ff6a9e;
+      --text: #eaeaf5;
+      --muted: #6b6b8a;
+      --btn-num: #1e1e2e;
+      --btn-op: #2a1f4a;
+      --btn-eq: #7c6aff;
+      --btn-clear: #3a1a2a;
+    }
+
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(124,106,255,0.12) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,106,158,0.08) 0%, transparent 70%);
+      bottom: -100px; right: -100px;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .calculator {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 24px;
+      width: 320px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,106,255,0.1);
+      animation: rise 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .display {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 20px 14px;
+      margin-bottom: 20px;
+      text-align: right;
+      min-height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .expression {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+
+    .result {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 38px;
+      color: var(--text);
+      letter-spacing: -1px;
+      line-height: 1;
+      transition: transform 0.15s, color 0.2s;
+      word-break: break-all;
+    }
+
+    .result.pop {
+      transform: scale(1.04);
+      color: #fff;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      height: 60px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.15s;
+      border-radius: inherit;
+    }
+
+    button:active { transform: scale(0.93); }
+    button:active::after { background: rgba(255,255,255,0.07); }
+
+    .btn-num {
+      background: var(--btn-num);
+      color: var(--text);
+    }
+    .btn-num:hover { background: #252535; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+
+    .btn-zero {
+      grid-column: span 2;
+      border-radius: 14px;
+    }
+
+    .btn-op {
+      background: var(--btn-op);
+      color: var(--accent);
+      font-size: 20px;
+    }
+    .btn-op:hover { background: #33224e; box-shadow: 0 4px 16px rgba(124,106,255,0.2); }
+
+    .btn-clear {
+      background: var(--btn-clear);
+      color: var(--accent2);
+    }
+    .btn-clear:hover { background: #451f35; box-shadow: 0 4px 16px rgba(255,106,158,0.2); }
+
+    .btn-eq {
+      background: var(--btn-eq);
+      color: #fff;
+      font-size: 22px;
+      box-shadow: 0 4px 20px rgba(124,106,255,0.35);
+    }
+    .btn-eq:hover { background: #9080ff; box-shadow: 0 6px 24px rgba(124,106,255,0.5); }
+
+    .btn-pct {
+      background: var(--btn-op);
+      color: var(--accent);
+    }
+    .btn-pct:hover { background: #33224e; }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      transform: scale(0);
+      animation: ripple-anim 0.4s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    .error .result { color: var(--accent2); }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <!-- Personalized Top Brand Label -->
+  <span class="label">Engineered by Amara Kallon</span>
+  
+  <div class="calculator" id="calc">
+    <div class="display" id="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <!-- Row 1 -->
+      <button class="btn-clear" data-action="clear">AC</button>
+      <button class="btn-clear" data-action="sign">+/−</button>
+      <button class="btn-pct"   data-action="percent">%</button>
+      <button class="btn-op"    data-op="/">÷</button>
+      <!-- Row 2 -->
+      <button class="btn-num"   data-num="7">7</button>
+      <button class="btn-num"   data-num="8">8</button>
+      <button class="btn-num"   data-num="9">9</button>
+      <button class="btn-op"    data-op="*">×</button>
+      <!-- Row 3 -->
+      <button class="btn-num"   data-num="4">4</button>
+      <button class="btn-num"   data-num="5">5</button>
+      <button class="btn-num"   data-num="6">6</button>
+      <button class="btn-op"    data-op="-">−</button>
+      <!-- Row 4 -->
+      <button class="btn-num"   data-num="1">1</button>
+      <button class="btn-num"   data-num="2">2</button>
+      <button class="btn-num"   data-num="3">3</button>
+      <button class="btn-op"    data-op="+">+</button>
+      <!-- Row 5 -->
+      <button class="btn-num btn-zero" data-num="0">0</button>
+      <button class="btn-num"   data-action="dot">.</button>
+      <button class="btn-eq"    data-action="equals">=</button>
+    </div>
+  </div>
+  
+  <!-- Personalized Bottom Brand Label -->
+  <span class="label">© 2026<br>Sky Vision College</span>
+</div>
+
+<script>
+  // ── State variables ──────────────────────────────
+  // These 4 variables store everything the calculator needs to remember
+  let current    = '0';   // the number currently shown on screen
+  let previous   = '';    // the first number (before operator)
+  let operator   = null;  // which operator was pressed (+, -, *, /)
+  let justEvaled = false; // did we just press "=" ?
+
+  // Grab the HTML elements we need to update
+  const resultEl     = document.getElementById('result');
+  const expressionEl = document.getElementById('expression');
+  const displayEl    = document.getElementById('display');
+
+  // ── Update the screen ────────────────────────────
+  function updateDisplay() {
+    resultEl.textContent = current;
+    if (operator && previous !== '') {
+      const opSymbol = { '+':'+', '-':'−', '*':'×', '/':'÷' }[operator];
+      expressionEl.textContent = previous + ' ' + opSymbol;
+    } else {
+      expressionEl.textContent = '';
+    }
+  }
+
+  // ── Bounce animation when = is pressed ──────────
+  function popResult() {
+    resultEl.classList.remove('pop');
+    void resultEl.offsetWidth; // forces browser to restart animation
+    resultEl.classList.add('pop');
+    setTimeout(() => resultEl.classList.remove('pop'), 200);
+  }
+
+  // ── When a number button is clicked ─────────────
+  function inputNumber(n) {
+    if (justEvaled) { current = n; justEvaled = false; }
+    else if (current === '0') current = n;          // replace leading zero
+    else if (current.length < 12) current += n;     // add digit
+    updateDisplay();
+  }
+
+  // ── When the decimal "." button is clicked ──────
+  function inputDot() {
+    if (justEvaled) { current = '0.'; justEvaled = false; }
+    else if (!current.includes('.')) current += '.'; // only one dot allowed
+    updateDisplay();
+  }
+
+  // ── When an operator (+, -, ×, ÷) is clicked ───
+  function inputOperator(op) {
+    if (operator && !justEvaled) calculate(); // chain: 5+3* will calc 5+3 first
+    previous   = current;
+    operator   = op;
+    justEvaled = false;
+    current    = '0';
+    updateDisplay();
+  }
+
+  // ── The core math logic ──────────────────────────
+  function calculate() {
+    if (!operator || previous === '') return; // nothing to calculate
+    const a = parseFloat(previous);  // convert string → number
+    const b = parseFloat(current);
+    let res;
+    if      (operator === '+') res = a + b;
+    else if (operator === '-') res = a - b;
+    else if (operator === '*') res = a * b;
+    else if (operator === '/') {
+      if (b === 0) { showError(); return; } // can't divide by zero!
+      res = a / b;
+    }
+    const opSymbol = { '+':'+', '-':'−', '*':'×', '/':'÷' }[operator];
+    expressionEl.textContent = previous + ' ' + opSymbol + ' ' + current + ' =';
+    current    = parseFloat(res.toFixed(10)).toString(); // fix floating point
+    operator   = null;
+    previous   = '';
+    justEvaled = true;
+    popResult();
+    resultEl.textContent = current;
+  }
+
+  // ── Toggle positive / negative ───────────────────
+  function toggleSign() {
+    if (current !== '0') {
+      current = current.startsWith('-') ? current.slice(1) : '-' + current;
+      updateDisplay();
+    }
+  }
+
+  // ── Convert to percentage ─────────────────────────
+  function percent() {
+    current = (parseFloat(current) / 100).toString();
+    updateDisplay();
+  }
+
+  // ── Reset everything ─────────────────────────────
+  function clear() {
+    current = '0'; previous = ''; operator = null; justEvaled = false;
+    displayEl.classList.remove('error');
+    updateDisplay();
+  }
+
+  // ── Show error (divide by zero) ──────────────────
+  function showError() {
+    current = 'Error'; operator = null; previous = '';
+    resultEl.textContent = current;
+    expressionEl.textContent = 'Cannot ÷ by 0';
+    displayEl.classList.add('error');
+    setTimeout(() => { clear(); }, 1500); // auto-clear after 1.5s
+  }
+
+  // ── Ripple effect on button click ────────────────
+  function addRipple(btn, e) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size/2) + 'px';
+    r.style.top  = (e.clientY - rect.top  - size/2) + 'px';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 400);
+  }
+
+  // ── Listen for button clicks ─────────────────────
+  document.querySelector('.buttons').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    addRipple(btn, e);
+    displayEl.classList.remove('error');
+
+    const num    = btn.dataset.num;
+    const op     = btn.dataset.op;
+    const action = btn.dataset.action;
+
+    if      (num !== undefined)        inputNumber(num);
+    else if (op  !== undefined)        inputOperator(op);
+    else if (action === 'equals')      calculate();
+    else if (action === 'clear')       clear();
+    else if (action === 'dot')         inputDot();
+    else if (action === 'sign')        toggleSign();
+    else if (action === 'percent')     percent();
+  });
+
+  // ── Keyboard support ─────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') inputNumber(e.key);
+    else if (e.key === '.')           inputDot();
+    else if (e.key === '+')           inputOperator('+');
+    else if (e.key === '-')           inputOperator('-');
+    else if (e.key === '*')           inputOperator('*');
+    else if (e.key === '/') { e.preventDefault(); inputOperator('/'); }
+    else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculate(); }
+    else if (e.key === 'Escape')      clear();
+    else if (e.key === '%')           percent();
+  });
+</script>
+</body>
+</html>
